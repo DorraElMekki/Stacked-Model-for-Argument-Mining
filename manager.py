@@ -20,9 +20,7 @@ torch.cuda.manual_seed_all(seed_val)
 def argNonArgMap(y):
     tmp = []
     for c in y:
-        if c == 'c':
-            tmp.append(1)
-        elif c == 'p':
+        if c in ['c', 'p']:
             tmp.append(1)
         else:
             tmp.append(0)
@@ -55,13 +53,13 @@ def GetTrainTestLists(x, y, fold=5):
 
 
 def StackSvmBert():
-    data_dir = ARG_EXTRACTION_ROOT_DIR + '/corpora/parsed-corpora/'
+    data_dir = f'{ARG_EXTRACTION_ROOT_DIR}/corpora/parsed-corpora/'
 
-    with open(data_dir + 'essays_sentences.json', encoding='utf-8') as f:
+    with open(f'{data_dir}essays_sentences.json', encoding='utf-8') as f:
         essays_sentences = json.load(f)
         y_essays = argNonArgMap([sent['sent-class'] for sent in essays_sentences])
 
-    with open(data_dir + 'web_discourse.json', encoding='utf-8') as f:
+    with open(f'{data_dir}web_discourse.json', encoding='utf-8') as f:
         web_d_sentences = json.load(f)
         y_web_d = argNonArgMap([sent['sent-class'] for sent in web_d_sentences])
         web_d_sentences = ProcessRowSentences([sent['sent-text'] for sent in web_d_sentences])
@@ -120,22 +118,22 @@ def StackSvmBert():
 
 def main(args):
     action, obj = args
-    if 'train' == action:
-        if 'bert' == obj:
+    if action == 'train':
+        if obj == 'bert':
             print('Running BERT training...')
             train_model(epochs=3)
-        elif 'svm' == obj:
+        elif obj == 'svm':
             print('Running SVM training...')
             train_svm()
-        elif 'stack' == obj:
+        elif obj == 'stack':
             StackSvmBert()
 
-    elif 'parse' == action:
-        if 'essays' == obj:
+    elif action == 'parse':
+        if obj == 'essays':
             print('Parsing Essays...')
             ParseEssays()
 
-        elif 'webd' == obj:
+        elif obj == 'webd':
             print('Parsing Web Discourse...')
             ParseWebDiscourse()
     else:

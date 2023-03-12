@@ -3,8 +3,7 @@ from src.transformers_ML.data_loader import RowSentencesHandler
 
 def mapping(y):
     conversion = ['n', 'c', 'p']
-    ans = [conversion[int(p)] for p in y]
-    return ans
+    return [conversion[int(p)] for p in y]
 
 # Function to calculate the accuracy of our predictions vs labels
 def flat_accuracy(preds, labels):
@@ -53,10 +52,10 @@ def TrainBertSeqCl(model, train_dataloader, optimizer, scheduler): #, class_weig
     for step, batch in enumerate(train_dataloader):
 
         # Progress update every 40 batches.
-        if step % 40 == 0 and not step == 0:
+        if step % 40 == 0 and step != 0:
             # Calculate elapsed time in minutes.
             elapsed = datetime.datetime.now() - t0
-            
+
             # Report progress.
             print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {}.'.format(step, len(train_dataloader), elapsed))
 

@@ -4,10 +4,10 @@ from src.classical_ML.src.vectorizer import Vectorizer
 
 from sklearn.model_selection import StratifiedKFold
 
-data_dir = ARG_EXTRACTION_ROOT_DIR + '/corpora/parsed-corpora/'
+data_dir = f'{ARG_EXTRACTION_ROOT_DIR}/corpora/parsed-corpora/'
 
 # DataUnification()
-with open(data_dir + 'essays_sentences.json', encoding='utf-8') as f:
+with open(f'{data_dir}essays_sentences.json', encoding='utf-8') as f:
     sentences_all = json.load(f)
 
 y = [sent['sent-class'] for sent in sentences_all]

@@ -56,9 +56,9 @@ def GetTrainTestLists(x, y, fold=5):
 
 
 def StackSvmBert():
-    data_dir = ARG_EXTRACTION_ROOT_DIR + '/corpora/parsed-corpora/'
+    data_dir = f'{ARG_EXTRACTION_ROOT_DIR}/corpora/parsed-corpora/'
 
-    with open(data_dir + 'essays_webd_ibm_p_c_with_prompt.json', encoding='utf-8') as f:
+    with open(f'{data_dir}essays_webd_ibm_p_c_with_prompt.json', encoding='utf-8') as f:
         sentences_all = json.load(f)
         y = premiseClaimMap([sent['sent-class'] for sent in sentences_all])  # sent class could be premise/ claim
         sentences_all = ProcessRowSentences([sent['sent-text'] for sent in sentences_all])
@@ -128,22 +128,22 @@ def main(args):
     action, obj = args
     print('action: ', action)
     print('obj: ', obj)
-    if 'train' == action:
-        if 'bert' == obj:
+    if action == 'train':
+        if obj == 'bert':
             print('Running BERT training...')
             train_model(epochs=3)
-        elif 'svm' == obj:
+        elif obj == 'svm':
             print('Running SVM training...')
             train_svm()
-        elif 'stack' == obj:
+        elif obj == 'stack':
             StackSvmBert()
 
-    elif 'parse' == action:
-        if 'essays' == obj:
+    elif action == 'parse':
+        if obj == 'essays':
             print('Parsing Essays...')
             ParseEssays()
 
-        elif 'webd' == obj:
+        elif obj == 'webd':
             print('Parsing Web Discourse...')
             ParseWebDiscourse()
     else:

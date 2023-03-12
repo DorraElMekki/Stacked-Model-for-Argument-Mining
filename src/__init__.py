@@ -2,9 +2,9 @@ import os
 
 ARG_EXTRACTION_ROOT_DIR = os.path.abspath(os.getcwd())
 
-models_dir = ARG_EXTRACTION_ROOT_DIR + '/models/'
-output_dir = ARG_EXTRACTION_ROOT_DIR + '/results-output/'
-news_output_dir = output_dir + 'stock-market-news'
+models_dir = f'{ARG_EXTRACTION_ROOT_DIR}/models/'
+output_dir = f'{ARG_EXTRACTION_ROOT_DIR}/results-output/'
+news_output_dir = f'{output_dir}stock-market-news'
 
 
 if not os.path.exists(output_dir):

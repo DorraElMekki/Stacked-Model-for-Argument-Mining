@@ -1,6 +1,6 @@
 from src.transformers_ML.config import *
 
-data_dir = ARG_EXTRACTION_ROOT_DIR + '/corpora/parsed-corpora/'
+data_dir = f'{ARG_EXTRACTION_ROOT_DIR}/corpora/parsed-corpora/'
 batch_size = 32
 max_seq_len = 128
 
@@ -9,9 +9,9 @@ class DataLoadHandler():
 
     def __init__(self, test_size = 0.4):
 
-        ess_df = pd.read_json(data_dir + 'essays_sentences.json')
+        ess_df = pd.read_json(f'{data_dir}essays_sentences.json')
         ess_df = ess_df[['sent-text', 'sent-class']]
-        web_df = pd.read_json(data_dir + 'web_discourse.json')
+        web_df = pd.read_json(f'{data_dir}web_discourse.json')
         sentences_df = pd.concat([ess_df, web_df]) # ess_df
         print(sentences_df['sent-class'].value_counts())
 
@@ -28,16 +28,13 @@ class DataLoadHandler():
         self.TokenizeAndEncode()
 
     def TokenizeAndEncode(self):
-        if 'bert-base-uncased' == TRANSFORMERS_MODEL_NAME:
+        if TRANSFORMERS_MODEL_NAME == 'bert-base-uncased':
             tokenizer = BertTokenizerFast.from_pretrained(TRANSFORMERS_MODEL_NAME, do_lower_case=True)
 
-        elif 'distilbert-base-uncased' == TRANSFORMERS_MODEL_NAME:
+        elif TRANSFORMERS_MODEL_NAME == 'distilbert-base-uncased':
             tokenizer = DistilBertTokenizerFast.from_pretrained(TRANSFORMERS_MODEL_NAME, do_lower_case=True)
 
-        elif 'roberta-base' == TRANSFORMERS_MODEL_NAME:
-                tokenizer = RobertaTokenizerFast.from_pretrained(TRANSFORMERS_MODEL_NAME, do_lower_case=True)
-
-        elif 'distilroberta-base' == TRANSFORMERS_MODEL_NAME:
+        elif TRANSFORMERS_MODEL_NAME in ['roberta-base', 'distilroberta-base']:
             tokenizer = RobertaTokenizerFast.from_pretrained(TRANSFORMERS_MODEL_NAME, do_lower_case=True)
 
         # tokenize and encode sequences in the training se
@@ -96,16 +93,13 @@ class DataLoadHandler():
 
 class RowSentencesHandler():
     def __init__(self):
-        if 'bert-base-uncased' == TRANSFORMERS_MODEL_NAME:
+        if TRANSFORMERS_MODEL_NAME == 'bert-base-uncased':
             tokenizer = BertTokenizerFast.from_pretrained(TRANSFORMERS_MODEL_NAME, do_lower_case=True)
 
-        elif 'distilbert-base-uncased' == TRANSFORMERS_MODEL_NAME:
+        elif TRANSFORMERS_MODEL_NAME == 'distilbert-base-uncased':
             tokenizer = DistilBertTokenizerFast.from_pretrained(TRANSFORMERS_MODEL_NAME, do_lower_case=True)
 
-        elif 'roberta-base' == TRANSFORMERS_MODEL_NAME:
-                tokenizer = RobertaTokenizerFast.from_pretrained(TRANSFORMERS_MODEL_NAME, do_lower_case=True)
-
-        elif 'distilroberta-base' == TRANSFORMERS_MODEL_NAME:
+        elif TRANSFORMERS_MODEL_NAME in ['roberta-base', 'distilroberta-base']:
             tokenizer = RobertaTokenizerFast.from_pretrained(TRANSFORMERS_MODEL_NAME, do_lower_case=True)
 
         self.tokenizer = tokenizer
@@ -133,6 +127,4 @@ class RowSentencesHandler():
 
         # sampler for sampling the data during training
         sampler = SequentialSampler(data)
-        # dataLoader for validation set
-        dataloader = DataLoader(data, sampler = sampler, batch_size = batch_size)
-        return dataloader
+        return DataLoader(data, sampler = sampler, batch_size = batch_size)

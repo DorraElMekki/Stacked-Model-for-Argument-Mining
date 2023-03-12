@@ -5,29 +5,24 @@ from src.transformers_ML.utils import *
 
 
 
-models_dir = ARG_EXTRACTION_ROOT_DIR + '/models/'
-output_dir = ARG_EXTRACTION_ROOT_DIR + '/results-output/'
-news_output_dir = output_dir + 'stock-market-news'
+models_dir = f'{ARG_EXTRACTION_ROOT_DIR}/models/'
+output_dir = f'{ARG_EXTRACTION_ROOT_DIR}/results-output/'
+news_output_dir = f'{output_dir}stock-market-news'
 NUM_LABELS = 2
 
 
-if 'bert-base-uncased' == TRANSFORMERS_MODEL_NAME:
+if TRANSFORMERS_MODEL_NAME == 'bert-base-uncased':
     model = BertForSequenceClassification.from_pretrained(TRANSFORMERS_MODEL_NAME, num_labels = NUM_LABELS,
                                                         output_attentions = False, output_hidden_states = False)
                                                         # attention_probs_dropout_prob = 0.1, hidden_dropout_prob = 0.1)
 
-elif 'distilbert-base-uncased' == TRANSFORMERS_MODEL_NAME:
+elif TRANSFORMERS_MODEL_NAME == 'distilbert-base-uncased':
     model = DistilBertForSequenceClassification.from_pretrained(TRANSFORMERS_MODEL_NAME, num_labels = NUM_LABELS,
                                                         output_attentions = False, output_hidden_states = False)
 
-elif 'roberta-base' == TRANSFORMERS_MODEL_NAME:
+elif TRANSFORMERS_MODEL_NAME in ['roberta-base', 'distilroberta-base']:
     model = RobertaForSequenceClassification.from_pretrained(TRANSFORMERS_MODEL_NAME, num_labels = NUM_LABELS,
                                                         output_attentions = False, output_hidden_states = False)
-
-elif 'distilroberta-base' == TRANSFORMERS_MODEL_NAME:
-    model = RobertaForSequenceClassification.from_pretrained(TRANSFORMERS_MODEL_NAME, num_labels = NUM_LABELS,
-                                                        output_attentions = False, output_hidden_states = False)
-
 
 model = model.to(device)
 
@@ -70,7 +65,7 @@ def train_model(epochs=3):
         # ========================================
         #             Model Saving
         # ========================================
-        model_path = '{}{}_essays_a_c_p_epoch_{}_weighted.pt'.format(models_dir, TRANSFORMERS_MODEL_NAME, epoch_i)
+        model_path = f'{models_dir}{TRANSFORMERS_MODEL_NAME}_essays_a_c_p_epoch_{epoch_i}_weighted.pt'
         torch.save(model.state_dict(), model_path)
     print("Training complete!!") 
 
@@ -78,8 +73,12 @@ def train_model(epochs=3):
     EvaluateBertSeqCl(model, test_dataloader)
 
 def test_model_on_news():
-    model.load_state_dict(torch.load(models_dir + 'distilroberta-base_essays_a_c_p_epoch_2_weighted.pt'))
-    news_dir = ARG_EXTRACTION_ROOT_DIR + '/corpora/stock-market-news/articles_20201015_20201026.json'
+    model.load_state_dict(
+        torch.load(
+            f'{models_dir}distilroberta-base_essays_a_c_p_epoch_2_weighted.pt'
+        )
+    )
+    news_dir = f'{ARG_EXTRACTION_ROOT_DIR}/corpora/stock-market-news/articles_20201015_20201026.json'
     inputFile = open(news_dir, 'r', encoding='utf8')
 
     try:
@@ -96,21 +95,21 @@ def test_model_on_news():
             # text processing is here
             # document = nlp(fullText)
             sentences_str = [sent.strip() for sent in fullText.split('\r\n') if len(sent) > 15]
-            
+
             tot_sentences = []
             for sent in sentences_str:
                 document = nlp(sent)
                 tot_sentences += [s.text for s in document.sents if len(s) > 15]
-            
+
             preds = Predict(model, tot_sentences)
             preds = mapping(preds)
 
-            with open(news_output_dir + f'/doc_{index}_ann.txt', 'w', encoding='utf8') as f:
+            with open(f'{news_output_dir}/doc_{index}_ann.txt', 'w', encoding='utf8') as f:
                 for index, sent in enumerate(tot_sentences):
-                    f.write('{}\t{}\n'.format(sent, preds[index]))
+                    f.write(f'{sent}\t{preds[index]}\n')
 
     except Exception as e:
-        print('Error: {}'.format(e))
+        print(f'Error: {e}')
     finally:
         print('Finish')
         inputFile.close()
@@ -118,12 +117,16 @@ def test_model_on_news():
 def test_model_on_ibm():
     print('Testing the model on ibm dataset')
 
-    model.load_state_dict(torch.load(models_dir + 'distilroberta-base_essays_a_c_p_epoch_2_weighted.pt'))
-    ibm_dir = ARG_EXTRACTION_ROOT_DIR + '/corpora/ibm'
+    model.load_state_dict(
+        torch.load(
+            f'{models_dir}distilroberta-base_essays_a_c_p_epoch_2_weighted.pt'
+        )
+    )
+    ibm_dir = f'{ARG_EXTRACTION_ROOT_DIR}/corpora/ibm'
 
-    with open(ibm_dir + '/claims.txt', encoding='utf-8') as f:
+    with open(f'{ibm_dir}/claims.txt', encoding='utf-8') as f:
         claim_lines = f.readlines()[1:]
-    with open(ibm_dir + '/evidence.txt', encoding='utf-8') as f:
+    with open(f'{ibm_dir}/evidence.txt', encoding='utf-8') as f:
         evidence_lines = f.readlines()[1:]
 
     claims_list = [line.split('\t')[2].lower() for line in claim_lines]

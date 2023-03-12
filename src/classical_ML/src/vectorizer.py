@@ -1,35 +1,34 @@
 from src.classical_ML.src.config import *
 from src.classical_ML.src.data_reader import ProcessRowText
 
-source_dir = ARG_EXTRACTION_ROOT_DIR + '/src/classical_ML/src/'
+source_dir = f'{ARG_EXTRACTION_ROOT_DIR}/src/classical_ML/src/'
 
 claim_indicators = []
-with open(source_dir + 'claim_indicators.txt', 'r') as f:
+with open(f'{source_dir}claim_indicators.txt', 'r') as f:
     lines = f.readlines()
     for line in lines:
-        line = line.strip()
-        if line: claim_indicators.append(line)
-
+        if line := line.strip():
+            claim_indicators.append(line)
 premise_indicators = []
-with open(source_dir + 'premise_indicators.txt', 'r') as f:
+with open(f'{source_dir}premise_indicators.txt', 'r') as f:
     lines = f.readlines()
     for line in lines:
-        line = line.strip()
-        if line: premise_indicators.append(line)
-
+        if line := line.strip():
+            premise_indicators.append(line)
 keyword_indicators = []
-with open(source_dir + 'key_words.txt', 'r') as f:
+with open(f'{source_dir}key_words.txt', 'r') as f:
     lines = f.readlines()
     for line in lines:
-        line = line.strip()
-        if line: keyword_indicators.append(line)
+        if line := line.strip():
+            keyword_indicators.append(line)
 
 
 def _GetParseTreeHeight(root):
-    if not list(root.children):
-        return 1
-    else:
-        return 1 + max(_GetParseTreeHeight(x) for x in root.children)
+    return (
+        1 + max(_GetParseTreeHeight(x) for x in root.children)
+        if list(root.children)
+        else 1
+    )
 
 def _GetTenseFromTag(tag):
     if tag in ['VBD', 'VBN']:
@@ -38,16 +37,10 @@ def _GetTenseFromTag(tag):
         return 'presenceTense'
     if tag == 'VB':
         return 'baseFormTense'
-    if tag == 'MD':
-        return 'modalVerb'
-    return ''
+    return 'modalVerb' if tag == 'MD' else ''
 
 def _GetWordsFrequency(sentence_text, words_list):
-    words_count = 0
-    for word in words_list:
-        if word in sentence_text:
-            words_count += 1
-    return words_count
+    return sum(word in sentence_text for word in words_list)
 
 class Vectorizer():
     def __init__(self, params=None):
@@ -57,12 +50,10 @@ class Vectorizer():
 
             self.lemma_vectorizer = CountVectorizer(binary=True, lowercase=True, stop_words='english', encoding='utf-8', ngram_range=(1, max_lemma_gram), min_df=lemma_min_df)
             self.pos_vectorizer = CountVectorizer(binary=True, encoding='utf-8', ngram_range=(1, max_pos_gram), min_df=pos_min_df)
-            self.other_vectorizer = CountVectorizer(binary=True, encoding='utf-8')
         else:
             self.lemma_vectorizer = CountVectorizer(binary=True, lowercase=True, stop_words='english', encoding='utf-8', ngram_range=(1, 3), min_df=5)
             self.pos_vectorizer = CountVectorizer(binary=True, encoding='utf-8', ngram_range=(1, 2), min_df=3)
-            self.other_vectorizer = CountVectorizer(binary=True, encoding='utf-8')
-
+        self.other_vectorizer = CountVectorizer(binary=True, encoding='utf-8')
         self.x_pos = []
         self.x_lemma = []
         self.x_other = []
@@ -76,7 +67,7 @@ class Vectorizer():
         self.pos_vectorizer.fit(self.x_pos)
         self.other_vectorizer.fit(self.x_other)
 
-        print('time {} s'.format(time.time() - starting_time))
+        print(f'time {time.time() - starting_time} s')
 
     def transform(self, sentences=None, row_text=None):
         starting_time = time.time()
@@ -99,13 +90,13 @@ class Vectorizer():
         x_other_vec = self.other_vectorizer.transform(x_other)
         x_vec = sparse.hstack((x_lemma_vec, x_pos_vec, x_other_vec), format='csr')
         x_vec_normalized = normalize(x_vec, norm='l1', axis=0)
-        print('time {} s'.format(time.time() - starting_time))
+        print(f'time {time.time() - starting_time} s')
 
         return x_vec
 
     def _GetDocumentTermsMatrices(self, sentences):
         x_pos, x_lemma, x_other = [], [], []
-        for index, sentence in enumerate(sentences):
+        for sentence in sentences:
             features = self._GetSentenceFeatures(sentence)
             x_pos.append(' '.join(features['pos-array']))
             x_lemma.append(' '.join(features['lemma-array']))
@@ -146,54 +137,40 @@ class Vectorizer():
         tree_height = _GetParseTreeHeight(root)
         tokens = list(doc)
 
-        for index, token in enumerate(tokens):
+        for token in tokens:
             pos_s.append(token.pos_)
             tag_s.append(token.tag_)
             lemma_s.append(token.lemma_)
 
-            token_tense = _GetTenseFromTag(token.tag_)
-            if token_tense: tense_s.append(token_tense)
-
+            if token_tense := _GetTenseFromTag(token.tag_):
+                tense_s.append(token_tense)
             if token.ent_type != 0: entity_s.append(token.ent_type_)
             if token.dep_ in ('xcomp', 'ccomp'): sub_clauses += 1
             if token.is_digit: digit_count += 1
-            if 'PUNCT' == token.pos_: ponctuation_count += 1
+            if token.pos_ == 'PUNCT': ponctuation_count += 1
 
 
         key_words_freq = _GetWordsFrequency(sentence['sent-text'], keyword_indicators)
         claim_words_freq = _GetWordsFrequency(sentence['sent-text'], claim_indicators)
         premise_words_freq = _GetWordsFrequency(sentence['sent-text'], premise_indicators)
 
-        features = {
-            ###########################
-            # Structural features
-            ###########################
-            'is-first-sentence' : (0 == sentence['sent-idx'])
-            ,'is-last-sentence' : sentence['is-last-sent']
-            ,'is-in-introduction' : (0 == sentence['parag-idx'])
-            ,'is-in-conclusion' : sentence['is-last-parag']
-            ,'sentence-position' : sentence['sent-idx']
-            ,'number-of-tokens' : len(tokens)
-            ,'number-of-ponctuation-marks' : ponctuation_count
-            ,'question-mark-ending' : ('?' == tokens[-1].text)
-            ###########################
-            # Lexical features
-            ###########################
-            ,'lemma-array' : lemma_s
-            ,'pos-array' : pos_s
-            ,'tense-array' : tense_s
-            ,'entity-array' : entity_s
-            ###########################
-            # Syntactic features
-            ###########################
-            ,'parse-tree-depth' : tree_height
-            ,'number-of-subclauses' : sub_clauses
-            ###########################
-            # Indicators
-            ###########################
-            ,'key-words-count' : key_words_freq
-            ,'claim-words-count' : claim_words_freq
-            ,'premise-words-count' : premise_words_freq
-            ,'digit-count' : digit_count
+        return {
+            'is-first-sentence': sentence['sent-idx'] == 0,
+            'is-last-sentence': sentence['is-last-sent'],
+            'is-in-introduction': sentence['parag-idx'] == 0,
+            'is-in-conclusion': sentence['is-last-parag'],
+            'sentence-position': sentence['sent-idx'],
+            'number-of-tokens': len(tokens),
+            'number-of-ponctuation-marks': ponctuation_count,
+            'question-mark-ending': tokens[-1].text == '?',
+            'lemma-array': lemma_s,
+            'pos-array': pos_s,
+            'tense-array': tense_s,
+            'entity-array': entity_s,
+            'parse-tree-depth': tree_height,
+            'number-of-subclauses': sub_clauses,
+            'key-words-count': key_words_freq,
+            'claim-words-count': claim_words_freq,
+            'premise-words-count': premise_words_freq,
+            'digit-count': digit_count,
         }
-        return features

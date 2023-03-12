@@ -1,8 +1,8 @@
 from src.classical_ML.src.config import *
 
-source_dir = ARG_EXTRACTION_ROOT_DIR + '/src/classical_ML/src/'
+source_dir = f'{ARG_EXTRACTION_ROOT_DIR}/src/classical_ML/src/'
 
-DATASET_BASE_DIR = ARG_EXTRACTION_ROOT_DIR + '/corpora/essays/'
+DATASET_BASE_DIR = f'{ARG_EXTRACTION_ROOT_DIR}/corpora/essays/'
 
 
 # total claims: 2257                                                                                                     │
@@ -10,29 +10,33 @@ DATASET_BASE_DIR = ARG_EXTRACTION_ROOT_DIR + '/corpora/essays/'
 
 def _GetEssaysFiles():
     essays = []
-    with open(DATASET_BASE_DIR + 'train-test-split.csv') as csv_file:
+    with open(f'{DATASET_BASE_DIR}train-test-split.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=';')
-        line_count = 0
-        for row in csv_reader:
-            if line_count == 0:
-                line_count += 1
-            else:
-                line_count += 1
+        for line_count, row in enumerate(csv_reader):
+            if line_count != 0:
                 essay = {
-                        'id':row[0]
-                        ,'txt': row[0] + '.txt'
-                        ,'ann': row[0] + '.ann'
-                        ,'train': ('TRAIN' == row[1])
-                        }
+                    'id': row[0],
+                    'txt': f'{row[0]}.txt',
+                    'ann': f'{row[0]}.ann',
+                    'train': row[1] == 'TRAIN',
+                }
                 essays.append(essay)
     return essays
 
 def _ProcessEssay(essay):
 
     annotated_sentences = []
-    
-    file_txt = open(DATASET_BASE_DIR + 'brat-project-final/' + essay['txt'], 'r', encoding='utf-8')
-    file_ann = open(DATASET_BASE_DIR + 'brat-project-final/' + essay['ann'], 'r', encoding='utf-8')
+
+    file_txt = open(
+        f'{DATASET_BASE_DIR}brat-project-final/' + essay['txt'],
+        'r',
+        encoding='utf-8',
+    )
+    file_ann = open(
+        f'{DATASET_BASE_DIR}brat-project-final/' + essay['ann'],
+        'r',
+        encoding='utf-8',
+    )
     try:
         # reading annotations
         claims_list = []
@@ -102,6 +106,7 @@ def ProcessRowText(row_text):
     annotated_sentences = []
     text = row_text.lower()
     paragraphs = text.split('\n')
+    sent_class = 'u' # still unknown sentence class
     for para_idx, paragraph in enumerate(paragraphs):
         is_last_parag = (para_idx == len(paragraphs) - 1)
         document = nlp(paragraph)
@@ -109,7 +114,6 @@ def ProcessRowText(row_text):
 
         for sent_idx, sent in enumerate(sentences_str):
             is_last_sent = (sent_idx == len(sentences_str) - 1)
-            sent_class = 'u' # still unknown sentence class
             sent = sent.replace('\n', ' ')
             sentence_dict = {
                     'sent-text' : sent.strip()
@@ -127,12 +131,12 @@ def ProcessRowText(row_text):
 
 def ProcessRowSentences(row_sentences):
     annotated_sentences = []
+    is_last_sent = 0
+    is_last_parag = 0
+    para_idx = 0
+    sent_idx = 0
+    sent_class = 'u' # still unknown sentence class
     for sent in row_sentences:
-        is_last_sent = 0
-        is_last_parag = 0
-        para_idx = 0
-        sent_idx = 0
-        sent_class = 'u' # still unknown sentence class
         sent = sent.replace('\n', ' ')
         sentence_dict = {
                 'sent-text' : sent.strip().lower()
@@ -163,16 +167,16 @@ def DataUnification():
     # save all sentences
     print('saving all sentences...')
 
-    with open(DATASET_BASE_DIR + '../parsed-corpora/essays_sentences.json', 'w', encoding='utf-8') as f:
+    with open(f'{DATASET_BASE_DIR}../parsed-corpora/essays_sentences.json', 'w', encoding='utf-8') as f:
         json.dump(sentences_all, f)
 
-def LoadEssaysSentences(file_name=DATASET_BASE_DIR + '../annotated_sentences_all.pkl'):
+def LoadEssaysSentences(file_name=f'{DATASET_BASE_DIR}../annotated_sentences_all.pkl'):
     print('Loading annotated sentences ...')
     try:
         with open(file_name, 'rb') as f:
             sentences_all = pickle.load(f)
     except Exception as e:
-        print('Error: {}'.format(e))
+        print(f'Error: {e}')
         sentences_all = []
 
     return sentences_all
